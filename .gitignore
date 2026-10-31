@@ -1,0 +1,10 @@
+# Never commit secrets or local data
+.env
+*.log
+*.json
+*.tmp
+*.pdf
+*.PDF
+RBI Dashboard.html
+baseline_complete.txt
+__pycache__/
