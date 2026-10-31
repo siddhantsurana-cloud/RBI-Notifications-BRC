@@ -36,7 +36,7 @@ except ImportError:
     pass
 
 # ============================ CONFIG ============================
-BASE_DIR = Path(r"S:\RBI - Notifications")
+BASE_DIR = Path(os.environ.get("RBI_BASE_DIR", r"S:\RBI - Notifications"))
 # If S: is a mapped network drive and the task runs while logged off, use the
 # UNC path instead, e.g.  Path(r"\\fileserver\share\RBI - Notifications")
 
