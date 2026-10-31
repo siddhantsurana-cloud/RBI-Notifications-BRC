@@ -1,0 +1,54 @@
+name: RBI sync
+
+# Runs at 08:00, 12:00, 16:00 and 20:00 India time (GitHub uses UTC).
+on:
+  schedule:
+    - cron: "30 2,6,10,14 * * *"
+  workflow_dispatch:          # adds a "Run workflow" button for manual runs
+
+permissions:
+  contents: write             # lets the workflow save new files to this repository
+
+concurrency:
+  group: rbi-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      RBI_BASE_DIR: docs      # PDFs, data and dashboard are stored in the docs folder
+      TZ: Asia/Kolkata
+    steps:
+      - name: Get repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      - name: Download new RBI publications and refresh dashboard
+        run: python rbi_downloader.py || echo "Run ended early; progress is kept and resumes next time."
+
+      - name: Publish dashboard as index page
+        if: always()
+        run: |
+          if [ -f "docs/RBI Dashboard.html" ]; then cp "docs/RBI Dashboard.html" docs/index.html; fi
+
+      - name: Save changes to repository
+        if: always()
+        run: |
+          git config user.name "rbi-sync-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs
+          if git diff --cached --quiet; then
+            echo "No new RBI publications."
+          else
+            git commit -m "RBI update $(date +'%d-%b-%Y %H:%M') IST"
+            git push
+          fi
